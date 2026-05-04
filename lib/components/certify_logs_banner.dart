@@ -40,57 +40,123 @@ class CertifyLogsBanner extends StatefulWidget {
   State<CertifyLogsBanner> createState() => _CertifyLogsBannerState();
 }
 
-class _CertifyLogsBannerState extends State<CertifyLogsBanner> {
-  static const _motion = Duration(milliseconds: 320);
-  static const _curve = Curves.easeOutCubic;
+class _CertifyLogsBannerState extends State<CertifyLogsBanner>
+    with SingleTickerProviderStateMixin {
+  // Liquid-glass-ish motion: longer durations + spring-y back-out for size,
+  // gentler ease-in-out for color, plus a state-change "settle" pulse.
+  static const _sizeMotion = Duration(milliseconds: 460);
+  static const _colorMotion = Duration(milliseconds: 380);
+  static const _iconMotion = Duration(milliseconds: 420);
+
+  // Approximations of UIKit-style critically-damped springs.
+  static const _spring = Cubic(0.22, 1.12, 0.36, 1.0); // gentle overshoot
+  static const _smooth = Cubic(0.65, 0.0, 0.35, 1.0); // smooth ease-in-out
+
+  late final AnimationController _settle = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  );
+
+  @override
+  void didUpdateWidget(covariant CertifyLogsBanner old) {
+    super.didUpdateWidget(old);
+    if (old.state != widget.state) {
+      _settle.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _settle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = _paletteFor(widget.state, isDark);
 
-    return AnimatedContainer(
-      duration: _motion,
-      curve: _curve,
-      decoration: BoxDecoration(
-        color: palette.bodyBg,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 6,
-            offset: Offset(1, 1),
+    return AnimatedBuilder(
+      animation: _settle,
+      builder: (context, child) {
+        // Tiny breathing scale on state change: 0.985 → 1.012 → 1.0
+        // driven through a back-out curve so it feels like settling glass.
+        final t = _spring.transform(_settle.value);
+        final scale = 0.985 + (1.012 - 0.985) * (1 - (1 - t).abs()) +
+            (1 - t) * 0.003;
+        return Transform.scale(scale: scale.clamp(0.985, 1.012), child: child);
+      },
+      child: AnimatedContainer(
+        duration: _colorMotion,
+        curve: _smooth,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.lerp(palette.bodyBg, Colors.white, isDark ? 0.02 : 0.04)!,
+              palette.bodyBg,
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Header(
-            palette: palette,
-            state: widget.state,
-            expanded: widget.expanded,
-            onTap: widget.onExpandToggle,
-            motion: _motion,
-            curve: _curve,
-          ),
-          AnimatedSize(
-            duration: _motion,
-            curve: _curve,
-            alignment: Alignment.topCenter,
-            child: AnimatedSwitcher(
-              duration: _motion,
-              switchInCurve: _curve,
-              switchOutCurve: _curve,
-              transitionBuilder: (child, anim) => FadeTransition(
-                opacity: anim,
-                child: SizeTransition(
-                  sizeFactor: anim,
-                  axisAlignment: -1,
-                  child: child,
-                ),
-              ),
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+          boxShadow: [
+            BoxShadow(
+              color: palette.headerBg.withValues(alpha: isDark ? 0.4 : 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
+              spreadRadius: -2,
+            ),
+            const BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 6,
+              offset: Offset(1, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Header(
+              palette: palette,
+              state: widget.state,
+              expanded: widget.expanded,
+              onTap: widget.onExpandToggle,
+              motion: _iconMotion,
+              colorMotion: _colorMotion,
+              spring: _spring,
+              smooth: _smooth,
+            ),
+            AnimatedSize(
+              duration: _sizeMotion,
+              curve: _spring,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                duration: _iconMotion,
+                switchInCurve: _spring,
+                switchOutCurve: _smooth,
+                transitionBuilder: (child, anim) {
+                  final slide = Tween<Offset>(
+                    begin: const Offset(0, -0.04),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: anim, curve: _spring));
+                  final scale = Tween<double>(begin: 0.98, end: 1.0)
+                      .animate(CurvedAnimation(parent: anim, curve: _spring));
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: slide,
+                      child: ScaleTransition(
+                        scale: scale,
+                        child: SizeTransition(
+                          sizeFactor: anim,
+                          axisAlignment: -1,
+                          child: child,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               child: widget.expanded
                   ? _Body(
                       key: ValueKey(widget.state),
@@ -105,9 +171,10 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner> {
                       onSelfAttest: widget.onSelfAttestTap,
                     )
                   : const SizedBox(width: double.infinity),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -179,7 +246,9 @@ class _Header extends StatelessWidget {
     required this.state,
     required this.expanded,
     required this.motion,
-    required this.curve,
+    required this.colorMotion,
+    required this.spring,
+    required this.smooth,
     this.onTap,
   });
 
@@ -187,7 +256,9 @@ class _Header extends StatelessWidget {
   final CertifyLogsState state;
   final bool expanded;
   final Duration motion;
-  final Curve curve;
+  final Duration colorMotion;
+  final Curve spring;
+  final Curve smooth;
   final VoidCallback? onTap;
 
   @override
@@ -195,16 +266,41 @@ class _Header extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: motion,
-        curve: curve,
+        duration: colorMotion,
+        curve: smooth,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: palette.headerBg,
+        decoration: BoxDecoration(
+          // Subtle top sheen — barely visible but adds the glassy quality.
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.lerp(palette.headerBg, Colors.white, 0.08)!,
+              palette.headerBg,
+            ],
+          ),
+        ),
         child: Row(
           children: [
             AnimatedSwitcher(
               duration: motion,
-              transitionBuilder: (c, a) =>
-                  ScaleTransition(scale: a, child: FadeTransition(opacity: a, child: c)),
+              switchInCurve: spring,
+              switchOutCurve: smooth,
+              transitionBuilder: (c, a) {
+                final rotate = Tween<double>(begin: -0.08, end: 0)
+                    .animate(CurvedAnimation(parent: a, curve: spring));
+                return FadeTransition(
+                  opacity: a,
+                  child: RotationTransition(
+                    turns: rotate,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.6, end: 1.0)
+                          .animate(CurvedAnimation(parent: a, curve: spring)),
+                      child: c,
+                    ),
+                  ),
+                );
+              },
               child: state == CertifyLogsState.loading
                   ? SizedBox(
                       key: const ValueKey('spinner'),
@@ -225,8 +321,21 @@ class _Header extends StatelessWidget {
             const SizedBox(width: 6),
             AnimatedSwitcher(
               duration: motion,
-              child: Text(
-                palette.title,
+              switchInCurve: spring,
+              switchOutCurve: smooth,
+              transitionBuilder: (c, a) {
+                final slide = Tween<Offset>(
+                  begin: const Offset(-0.15, 0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: a, curve: spring));
+                return FadeTransition(
+                  opacity: a,
+                  child: SlideTransition(position: slide, child: c),
+                );
+              },
+              child: AnimatedDefaultTextStyle(
+                duration: colorMotion,
+                curve: smooth,
                 key: ValueKey(palette.title),
                 style: GoogleFonts.roboto(
                   color: palette.textOn,
@@ -235,12 +344,13 @@ class _Header extends StatelessWidget {
                   letterSpacing: 0.5,
                   height: 1.5,
                 ),
+                child: Text(palette.title),
               ),
             ),
             const Spacer(),
             AnimatedRotation(
               duration: motion,
-              curve: curve,
+              curve: spring,
               turns: expanded ? 0.5 : 0,
               child: Icon(
                 Icons.expand_more,
