@@ -3,6 +3,7 @@ import 'package:storybook_flutter/storybook_flutter.dart';
 
 import 'stories/button_stories.dart';
 import 'stories/card_stories.dart';
+import 'stories/color_stories.dart';
 import 'stories/text_field_stories.dart';
 
 void main() => runApp(const StorybookApp());
@@ -27,6 +28,7 @@ class StorybookApp extends StatelessWidget {
         home: Scaffold(body: Center(child: child)),
       ),
       stories: [
+        ...colorStories,
         ...buttonStories,
         ...cardStories,
         ...textFieldStories,
