@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../tokens/colors.dart';
 import '../tokens/semantic_colors.dart';
 
 enum CertifyLogsState { loading, uncertified, unverifiable, certified }
@@ -44,8 +46,8 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final sem = Theme.of(context).transflo;
-    final palette = _paletteFor(widget.state, sem);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = _paletteFor(widget.state, isDark);
 
     return AnimatedContainer(
       duration: _motion,
@@ -110,41 +112,43 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner> {
     );
   }
 
-  _BannerPalette _paletteFor(CertifyLogsState s, TransfloSemanticColors sem) {
+  _BannerPalette _paletteFor(CertifyLogsState s, bool isDark) {
+    // Light/dark hex pairs taken directly from the Figma variables export
+    // (var(--orange-50/100), var(--red-50/100), var(--green-50/100), etc.).
     switch (s) {
       case CertifyLogsState.uncertified:
         return _BannerPalette(
-          headerBg: sem.statusWarning,
-          bodyBg: sem.statusWarningLight,
-          accent: sem.statusWarningDark,
-          textOn: sem.statusWarningOn,
-          icon: Icons.schedule,
-          title: 'CERTIFY LOGS',
+          headerBg: isDark ? const Color(0xFF805200) : TransfloColors.orange100,
+          bodyBg: isDark ? const Color(0xFF664100) : TransfloColors.orange50,
+          accent: TransfloColors.orange500,
+          textOn: isDark ? Colors.white : TransfloColors.black900,
+          icon: Icons.fact_check_outlined,
+          title: 'CERTIFY  LOGS',
         );
       case CertifyLogsState.unverifiable:
         return _BannerPalette(
-          headerBg: sem.statusError,
-          bodyBg: sem.statusErrorLight,
-          accent: sem.statusErrorDark,
-          textOn: sem.statusErrorOn,
+          headerBg: isDark ? const Color(0xFF6D1016) : TransfloColors.red100,
+          bodyBg: isDark ? const Color(0xFF570C12) : TransfloColors.red50,
+          accent: TransfloColors.red500,
+          textOn: isDark ? Colors.white : TransfloColors.black900,
           icon: Icons.warning_amber_rounded,
-          title: 'CERTIFY LOGS',
+          title: 'CERTIFY  LOGS',
         );
       case CertifyLogsState.certified:
         return _BannerPalette(
-          headerBg: sem.statusSuccessLight,
-          bodyBg: sem.statusSuccessLight,
-          accent: sem.statusSuccessDark,
-          textOn: sem.statusSuccessDark,
+          headerBg: isDark ? const Color(0xFF006018) : TransfloColors.green100,
+          bodyBg: isDark ? const Color(0xFF004C13) : TransfloColors.green50,
+          accent: TransfloColors.green800,
+          textOn: isDark ? const Color(0xFF50FF80) : TransfloColors.black900,
           icon: Icons.verified_user_outlined,
           title: 'LOGS CERTIFIED',
         );
       case CertifyLogsState.loading:
         return _BannerPalette(
-          headerBg: sem.backgroundElevated,
-          bodyBg: sem.backgroundElevated,
-          accent: sem.brandPrimary,
-          textOn: sem.textHeading,
+          headerBg: isDark ? TransfloColors.black800 : TransfloColors.surface100,
+          bodyBg: isDark ? TransfloColors.black900 : TransfloColors.surface50,
+          accent: TransfloColors.blue500,
+          textOn: isDark ? Colors.white : TransfloColors.black900,
           icon: Icons.sync,
           title: 'CHECKING LOGS',
         );
@@ -224,7 +228,7 @@ class _Header extends StatelessWidget {
               child: Text(
                 palette.title,
                 key: ValueKey(palette.title),
-                style: TextStyle(
+                style: GoogleFonts.roboto(
                   color: palette.textOn,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -289,7 +293,7 @@ class _Body extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(
+              style: GoogleFonts.roboto(
                 color: palette.textOn,
                 fontSize: 14,
                 height: 1.5,
@@ -339,13 +343,17 @@ class _Body extends StatelessWidget {
           _PrimaryCta(
             label: 'Certify Logs In Geotab',
             icon: Icons.fact_check_outlined,
-            color: sem.brandPrimary,
-            foreground: sem.brandPrimaryOn,
+            color: TransfloColors.blue500,
+            foreground: Colors.white,
             onTap: onCertify,
           ),
           if (!required) ...[
             const SizedBox(height: 8),
-            _SkipLink(color: palette.textOn, onTap: onSkip),
+            _SkipTile(
+              background: palette.headerBg,
+              foreground: palette.textOn,
+              onTap: onSkip,
+            ),
           ],
         ];
       case CertifyLogsState.unverifiable:
@@ -353,17 +361,17 @@ class _Body extends StatelessWidget {
           _OutlineCta(
             label: 'Try Again',
             icon: Icons.refresh,
-            borderColor: sem.statusError,
-            foreground: sem.textHeading,
-            background: sem.backgroundBase,
+            borderColor: TransfloColors.red500,
+            foreground: const Color(0xFF3D3D3D),
+            background: Colors.white,
             onTap: onTryAgain,
           ),
           const SizedBox(height: 8),
           _PrimaryCta(
             label: 'I Have Certified My Logs',
             icon: Icons.verified_user_outlined,
-            color: sem.statusSuccessAltDark,
-            foreground: sem.statusSuccessAltOn,
+            color: TransfloColors.green800,
+            foreground: Colors.white,
             onTap: onSelfAttest,
           ),
         ];
@@ -397,7 +405,8 @@ class _PrimaryCta extends StatelessWidget {
         onPressed: onTap,
         icon: Icon(icon, size: 14),
         label: Text(label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            style: GoogleFonts.roboto(
+                fontSize: 14, fontWeight: FontWeight.w500)),
         style: FilledButton.styleFrom(
           backgroundColor: color,
           foregroundColor: foreground,
@@ -434,7 +443,7 @@ class _OutlineCta extends StatelessWidget {
         onPressed: onTap,
         icon: Icon(icon, size: 14, color: foreground),
         label: Text(label,
-            style: TextStyle(
+            style: GoogleFonts.roboto(
                 fontSize: 14, fontWeight: FontWeight.w500, color: foreground)),
         style: OutlinedButton.styleFrom(
           backgroundColor: background,
@@ -448,31 +457,43 @@ class _OutlineCta extends StatelessWidget {
   }
 }
 
-class _SkipLink extends StatelessWidget {
-  const _SkipLink({required this.color, this.onTap});
-  final Color color;
+class _SkipTile extends StatelessWidget {
+  const _SkipTile({
+    required this.background,
+    required this.foreground,
+    this.onTap,
+  });
+  final Color background;
+  final Color foreground;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Skip For Now',
-              style: TextStyle(
-                color: color,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+    return SizedBox(
+      height: 44,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(4),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(4),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Skip For Now',
+                  style: GoogleFonts.roboto(
+                    color: foreground,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, size: 16, color: foreground),
+              ],
             ),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right, size: 16, color: color),
-          ],
+          ),
         ),
       ),
     );

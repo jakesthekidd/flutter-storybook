@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 
 import 'stories/button_stories.dart';
@@ -27,17 +28,23 @@ class _StorybookAppState extends State<StorybookApp> {
 
   @override
   Widget build(BuildContext context) {
-    final lightTheme = ThemeData(
+    final lightBase = ThemeData(
       colorSchemeSeed: Colors.indigo,
       useMaterial3: true,
       brightness: Brightness.light,
       extensions: const [TransfloSemanticColors.light],
     );
-    final darkTheme = ThemeData(
+    final darkBase = ThemeData(
       colorSchemeSeed: Colors.indigo,
       useMaterial3: true,
       brightness: Brightness.dark,
       extensions: const [TransfloSemanticColors.dark],
+    );
+    final lightTheme = lightBase.copyWith(
+      textTheme: GoogleFonts.robotoTextTheme(lightBase.textTheme),
+    );
+    final darkTheme = darkBase.copyWith(
+      textTheme: GoogleFonts.robotoTextTheme(darkBase.textTheme),
     );
 
     return MaterialApp(
