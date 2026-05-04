@@ -4,31 +4,64 @@ import 'package:storybook_flutter/storybook_flutter.dart';
 import 'stories/button_stories.dart';
 import 'stories/card_stories.dart';
 import 'stories/color_stories.dart';
+import 'stories/semantic_color_stories.dart';
 import 'stories/text_field_stories.dart';
+import 'tokens/semantic_colors.dart';
 
 void main() => runApp(const StorybookApp());
 
-class StorybookApp extends StatelessWidget {
+class StorybookApp extends StatefulWidget {
   const StorybookApp({super.key});
 
   @override
+  State<StorybookApp> createState() => _StorybookAppState();
+}
+
+class _StorybookAppState extends State<StorybookApp> {
+  ThemeMode _mode = ThemeMode.light;
+
+  void _toggle() => setState(() {
+        _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      });
+
+  @override
   Widget build(BuildContext context) {
+    final lightTheme = ThemeData(
+      colorSchemeSeed: Colors.indigo,
+      useMaterial3: true,
+      brightness: Brightness.light,
+      extensions: const [TransfloSemanticColors.light],
+    );
+    final darkTheme = ThemeData(
+      colorSchemeSeed: Colors.indigo,
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      extensions: const [TransfloSemanticColors.dark],
+    );
+
     return Storybook(
       wrapperBuilder: (context, child) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorSchemeSeed: Colors.indigo,
-          useMaterial3: true,
+        themeMode: _mode,
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        home: Builder(
+          builder: (context) => Scaffold(
+            backgroundColor: Theme.of(context).transflo.backgroundBase,
+            body: Center(child: child),
+            floatingActionButton: FloatingActionButton.small(
+              tooltip: _mode == ThemeMode.light ? 'Switch to dark' : 'Switch to light',
+              onPressed: _toggle,
+              child: Icon(
+                _mode == ThemeMode.light ? Icons.dark_mode : Icons.light_mode,
+              ),
+            ),
+          ),
         ),
-        darkTheme: ThemeData(
-          colorSchemeSeed: Colors.indigo,
-          brightness: Brightness.dark,
-          useMaterial3: true,
-        ),
-        home: Scaffold(body: Center(child: child)),
       ),
       stories: [
         ...colorStories,
+        ...semanticColorStories,
         ...buttonStories,
         ...cardStories,
         ...textFieldStories,
