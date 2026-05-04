@@ -1,0 +1,480 @@
+import 'package:flutter/material.dart';
+
+import '../tokens/semantic_colors.dart';
+
+enum CertifyLogsState { loading, uncertified, unverifiable, certified }
+
+/// A multi-state status banner that prompts drivers to certify HOS logs.
+/// Designed to feel reactive — color, size, icon, and content flow between
+/// states with implicit animations rather than discrete page swaps.
+class CertifyLogsBanner extends StatefulWidget {
+  const CertifyLogsBanner({
+    super.key,
+    required this.state,
+    this.expanded = true,
+    this.required = true,
+    this.daysCount = 14,
+    this.verifiedAt,
+    this.onCertifyTap,
+    this.onSkipTap,
+    this.onTryAgainTap,
+    this.onSelfAttestTap,
+    this.onExpandToggle,
+  });
+
+  final CertifyLogsState state;
+  final bool expanded;
+  final bool required;
+  final int daysCount;
+  final DateTime? verifiedAt;
+
+  final VoidCallback? onCertifyTap;
+  final VoidCallback? onSkipTap;
+  final VoidCallback? onTryAgainTap;
+  final VoidCallback? onSelfAttestTap;
+  final VoidCallback? onExpandToggle;
+
+  @override
+  State<CertifyLogsBanner> createState() => _CertifyLogsBannerState();
+}
+
+class _CertifyLogsBannerState extends State<CertifyLogsBanner> {
+  static const _motion = Duration(milliseconds: 320);
+  static const _curve = Curves.easeOutCubic;
+
+  @override
+  Widget build(BuildContext context) {
+    final sem = Theme.of(context).transflo;
+    final palette = _paletteFor(widget.state, sem);
+
+    return AnimatedContainer(
+      duration: _motion,
+      curve: _curve,
+      decoration: BoxDecoration(
+        color: palette.bodyBg,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 6,
+            offset: Offset(1, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Header(
+            palette: palette,
+            state: widget.state,
+            expanded: widget.expanded,
+            onTap: widget.onExpandToggle,
+            motion: _motion,
+            curve: _curve,
+          ),
+          AnimatedSize(
+            duration: _motion,
+            curve: _curve,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: _motion,
+              switchInCurve: _curve,
+              switchOutCurve: _curve,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: SizeTransition(
+                  sizeFactor: anim,
+                  axisAlignment: -1,
+                  child: child,
+                ),
+              ),
+              child: widget.expanded
+                  ? _Body(
+                      key: ValueKey(widget.state),
+                      state: widget.state,
+                      palette: palette,
+                      required: widget.required,
+                      daysCount: widget.daysCount,
+                      verifiedAt: widget.verifiedAt,
+                      onCertify: widget.onCertifyTap,
+                      onSkip: widget.onSkipTap,
+                      onTryAgain: widget.onTryAgainTap,
+                      onSelfAttest: widget.onSelfAttestTap,
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _BannerPalette _paletteFor(CertifyLogsState s, TransfloSemanticColors sem) {
+    switch (s) {
+      case CertifyLogsState.uncertified:
+        return _BannerPalette(
+          headerBg: sem.statusWarning,
+          bodyBg: sem.statusWarningLight,
+          accent: sem.statusWarningDark,
+          textOn: sem.statusWarningOn,
+          icon: Icons.schedule,
+          title: 'CERTIFY LOGS',
+        );
+      case CertifyLogsState.unverifiable:
+        return _BannerPalette(
+          headerBg: sem.statusError,
+          bodyBg: sem.statusErrorLight,
+          accent: sem.statusErrorDark,
+          textOn: sem.statusErrorOn,
+          icon: Icons.warning_amber_rounded,
+          title: 'CERTIFY LOGS',
+        );
+      case CertifyLogsState.certified:
+        return _BannerPalette(
+          headerBg: sem.statusSuccessLight,
+          bodyBg: sem.statusSuccessLight,
+          accent: sem.statusSuccessDark,
+          textOn: sem.statusSuccessDark,
+          icon: Icons.verified_user_outlined,
+          title: 'LOGS CERTIFIED',
+        );
+      case CertifyLogsState.loading:
+        return _BannerPalette(
+          headerBg: sem.backgroundElevated,
+          bodyBg: sem.backgroundElevated,
+          accent: sem.brandPrimary,
+          textOn: sem.textHeading,
+          icon: Icons.sync,
+          title: 'CHECKING LOGS',
+        );
+    }
+  }
+}
+
+class _BannerPalette {
+  const _BannerPalette({
+    required this.headerBg,
+    required this.bodyBg,
+    required this.accent,
+    required this.textOn,
+    required this.icon,
+    required this.title,
+  });
+  final Color headerBg;
+  final Color bodyBg;
+  final Color accent;
+  final Color textOn;
+  final IconData icon;
+  final String title;
+}
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.palette,
+    required this.state,
+    required this.expanded,
+    required this.motion,
+    required this.curve,
+    this.onTap,
+  });
+
+  final _BannerPalette palette;
+  final CertifyLogsState state;
+  final bool expanded;
+  final Duration motion;
+  final Curve curve;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: motion,
+        curve: curve,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: palette.headerBg,
+        child: Row(
+          children: [
+            AnimatedSwitcher(
+              duration: motion,
+              transitionBuilder: (c, a) =>
+                  ScaleTransition(scale: a, child: FadeTransition(opacity: a, child: c)),
+              child: state == CertifyLogsState.loading
+                  ? SizedBox(
+                      key: const ValueKey('spinner'),
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(palette.accent),
+                      ),
+                    )
+                  : Icon(
+                      palette.icon,
+                      key: ValueKey(palette.icon),
+                      size: 16,
+                      color: palette.textOn,
+                    ),
+            ),
+            const SizedBox(width: 6),
+            AnimatedSwitcher(
+              duration: motion,
+              child: Text(
+                palette.title,
+                key: ValueKey(palette.title),
+                style: TextStyle(
+                  color: palette.textOn,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const Spacer(),
+            AnimatedRotation(
+              duration: motion,
+              curve: curve,
+              turns: expanded ? 0.5 : 0,
+              child: Icon(
+                Icons.expand_more,
+                size: 16,
+                color: palette.textOn.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  const _Body({
+    super.key,
+    required this.state,
+    required this.palette,
+    required this.required,
+    required this.daysCount,
+    required this.verifiedAt,
+    this.onCertify,
+    this.onSkip,
+    this.onTryAgain,
+    this.onSelfAttest,
+  });
+
+  final CertifyLogsState state;
+  final _BannerPalette palette;
+  final bool required;
+  final int daysCount;
+  final DateTime? verifiedAt;
+  final VoidCallback? onCertify;
+  final VoidCallback? onSkip;
+  final VoidCallback? onTryAgain;
+  final VoidCallback? onSelfAttest;
+
+  @override
+  Widget build(BuildContext context) {
+    final sem = Theme.of(context).transflo;
+    final message = _message();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (message != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: TextStyle(
+                color: palette.textOn,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          ..._actionsFor(sem),
+        ],
+      ),
+    );
+  }
+
+  String? _message() {
+    switch (state) {
+      case CertifyLogsState.uncertified:
+        return required
+            ? 'To continue workflow you must certify your HOS logs from the previous $daysCount days'
+            : 'Reminder: certify your HOS logs from the previous $daysCount days';
+      case CertifyLogsState.unverifiable:
+        return "Can't verify logs, confirm certified before continuing";
+      case CertifyLogsState.certified:
+        final ts = verifiedAt;
+        final when = ts == null ? 'just now' : _relative(ts);
+        return 'Verified $when. You\'re good to continue.';
+      case CertifyLogsState.loading:
+        return 'Checking certification status…';
+    }
+  }
+
+  static String _relative(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes} minute${diff.inMinutes == 1 ? '' : 's'} ago';
+    }
+    if (diff.inHours < 24) {
+      return '${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
+    }
+    return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+  }
+
+  List<Widget> _actionsFor(TransfloSemanticColors sem) {
+    switch (state) {
+      case CertifyLogsState.uncertified:
+        return [
+          _PrimaryCta(
+            label: 'Certify Logs In Geotab',
+            icon: Icons.fact_check_outlined,
+            color: sem.brandPrimary,
+            foreground: sem.brandPrimaryOn,
+            onTap: onCertify,
+          ),
+          if (!required) ...[
+            const SizedBox(height: 8),
+            _SkipLink(color: palette.textOn, onTap: onSkip),
+          ],
+        ];
+      case CertifyLogsState.unverifiable:
+        return [
+          _OutlineCta(
+            label: 'Try Again',
+            icon: Icons.refresh,
+            borderColor: sem.statusError,
+            foreground: sem.textHeading,
+            background: sem.backgroundBase,
+            onTap: onTryAgain,
+          ),
+          const SizedBox(height: 8),
+          _PrimaryCta(
+            label: 'I Have Certified My Logs',
+            icon: Icons.verified_user_outlined,
+            color: sem.statusSuccessAltDark,
+            foreground: sem.statusSuccessAltOn,
+            onTap: onSelfAttest,
+          ),
+        ];
+      case CertifyLogsState.certified:
+        return const [];
+      case CertifyLogsState.loading:
+        return const [];
+    }
+  }
+}
+
+class _PrimaryCta extends StatelessWidget {
+  const _PrimaryCta({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.foreground,
+    this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color foreground;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: FilledButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 14),
+        label: Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: foreground,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+      ),
+    );
+  }
+}
+
+class _OutlineCta extends StatelessWidget {
+  const _OutlineCta({
+    required this.label,
+    required this.icon,
+    required this.borderColor,
+    required this.foreground,
+    required this.background,
+    this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final Color borderColor;
+  final Color foreground;
+  final Color background;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 14, color: foreground),
+        label: Text(label,
+            style: TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w500, color: foreground)),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: background,
+          side: BorderSide(color: borderColor),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkipLink extends StatelessWidget {
+  const _SkipLink({required this.color, this.onTap});
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Skip For Now',
+              style: TextStyle(
+                color: color,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right, size: 16, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+}

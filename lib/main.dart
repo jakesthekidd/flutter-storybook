@@ -3,6 +3,7 @@ import 'package:storybook_flutter/storybook_flutter.dart';
 
 import 'stories/button_stories.dart';
 import 'stories/card_stories.dart';
+import 'stories/certify_logs_stories.dart';
 import 'stories/color_stories.dart';
 import 'stories/semantic_color_stories.dart';
 import 'stories/text_field_stories.dart';
@@ -60,6 +61,7 @@ class _StorybookAppState extends State<StorybookApp> {
               stories: [
                 ...colorStories,
                 ...semanticColorStories,
+                ...certifyLogsStories,
                 ...buttonStories,
                 ...cardStories,
                 ...textFieldStories,
