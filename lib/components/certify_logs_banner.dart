@@ -54,8 +54,22 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
 
   late final AnimationController _settle = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 520),
-  );
+    duration: const Duration(milliseconds: 720),
+  )..value = 1.0;
+
+  // Scale: 0.94 → 1.0 with an elastic-out curve so it overshoots and
+  // visibly oscillates before settling. Plays from 0 → 1 on every state change.
+  late final Animation<double> _pulseScale = Tween<double>(
+    begin: 0.94,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _settle, curve: Curves.elasticOut));
+
+  // Vertical drop with the same spring so the banner feels like it
+  // physically lands when a new state arrives.
+  late final Animation<double> _pulseDrop = Tween<double>(
+    begin: -6,
+    end: 0,
+  ).animate(CurvedAnimation(parent: _settle, curve: Curves.easeOutBack));
 
   @override
   void didUpdateWidget(covariant CertifyLogsBanner old) {
@@ -79,12 +93,13 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
     return AnimatedBuilder(
       animation: _settle,
       builder: (context, child) {
-        // Tiny breathing scale on state change: 0.985 → 1.012 → 1.0
-        // driven through a back-out curve so it feels like settling glass.
-        final t = _spring.transform(_settle.value);
-        final scale = 0.985 + (1.012 - 0.985) * (1 - (1 - t).abs()) +
-            (1 - t) * 0.003;
-        return Transform.scale(scale: scale.clamp(0.985, 1.012), child: child);
+        return Transform.translate(
+          offset: Offset(0, _pulseDrop.value),
+          child: Transform.scale(
+            scale: _pulseScale.value,
+            child: child,
+          ),
+        );
       },
       child: AnimatedContainer(
         duration: _colorMotion,
