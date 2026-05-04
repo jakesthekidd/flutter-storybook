@@ -39,33 +39,52 @@ class _StorybookAppState extends State<StorybookApp> {
       extensions: const [TransfloSemanticColors.dark],
     );
 
-    return Storybook(
-      wrapperBuilder: (context, child) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: _mode,
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        home: Builder(
-          builder: (context) => Scaffold(
-            backgroundColor: Theme.of(context).transflo.backgroundBase,
-            body: Center(child: child),
-            floatingActionButton: FloatingActionButton.small(
-              tooltip: _mode == ThemeMode.light ? 'Switch to dark' : 'Switch to light',
-              onPressed: _toggle,
-              child: Icon(
-                _mode == ThemeMode.light ? Icons.dark_mode : Icons.light_mode,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      themeMode: _mode,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      home: Stack(
+        children: [
+          Positioned.fill(
+            child: Storybook(
+              wrapperBuilder: (context, child) => Builder(
+                builder: (context) {
+                  final sem = Theme.of(context).transflo;
+                  return ColoredBox(
+                    color: sem.backgroundBase,
+                    child: Center(child: child),
+                  );
+                },
+              ),
+              stories: [
+                ...colorStories,
+                ...semanticColorStories,
+                ...buttonStories,
+                ...cardStories,
+                ...textFieldStories,
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Builder(
+              builder: (context) => FloatingActionButton.small(
+                tooltip: _mode == ThemeMode.light
+                    ? 'Switch to dark'
+                    : 'Switch to light',
+                onPressed: _toggle,
+                child: Icon(
+                  _mode == ThemeMode.light
+                      ? Icons.dark_mode
+                      : Icons.light_mode,
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
-      stories: [
-        ...colorStories,
-        ...semanticColorStories,
-        ...buttonStories,
-        ...cardStories,
-        ...textFieldStories,
-      ],
     );
   }
 }
