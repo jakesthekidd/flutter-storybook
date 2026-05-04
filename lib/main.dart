@@ -51,7 +51,7 @@ class _StorybookAppState extends State<StorybookApp> {
               wrapperBuilder: (context, child) => Builder(
                 builder: (context) {
                   final sem = Theme.of(context).transflo;
-                  return ColoredBox(
+                  return Material(
                     color: sem.backgroundBase,
                     child: Center(child: child),
                   );
