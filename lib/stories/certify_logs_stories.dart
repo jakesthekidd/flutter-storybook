@@ -103,7 +103,7 @@ class _InteractiveFlowState extends State<_InteractiveFlow> {
             verifiedAt: _verifiedAt,
             onExpandToggle: () => setState(() => _expanded = !_expanded),
             onCertifyTap: _certify,
-            onSkipTap: _reset,
+            onSkipTap: () => setState(() => _expanded = false),
             onTryAgainTap: _certify,
             onSelfAttestTap: _selfAttest,
           ),
