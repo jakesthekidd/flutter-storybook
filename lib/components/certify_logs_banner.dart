@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -41,35 +43,86 @@ class CertifyLogsBanner extends StatefulWidget {
 }
 
 class _CertifyLogsBannerState extends State<CertifyLogsBanner>
-    with SingleTickerProviderStateMixin {
-  // Liquid-glass-ish motion: longer durations + spring-y back-out for size,
-  // gentler ease-in-out for color, plus a state-change "settle" pulse.
-  static const _sizeMotion = Duration(milliseconds: 460);
-  static const _colorMotion = Duration(milliseconds: 380);
-  static const _iconMotion = Duration(milliseconds: 420);
+    with TickerProviderStateMixin {
+  // iOS Liquid Glass durations — quick enough to feel reactive,
+  // long enough for the spring tail to read.
+  static const _fast = Duration(milliseconds: 280);
+  static const _medium = Duration(milliseconds: 360);
+  static const _slow = Duration(milliseconds: 440);
 
-  // Approximations of UIKit-style critically-damped springs.
-  static const _spring = Cubic(0.22, 1.12, 0.36, 1.0); // gentle overshoot
-  static const _smooth = Cubic(0.65, 0.0, 0.35, 1.0); // smooth ease-in-out
+  // Apple's classic spring curve — fast attack, soft tail, no overshoot.
+  // Used for color, opacity, and translation everywhere except the arrival
+  // settle, which gets a small overshoot.
+  static const _liquid = Cubic(0.32, 0.72, 0, 1);
+  // Subtle overshoot (~3%) for the state-arrival settle.
+  static const _arrive = Cubic(0.34, 1.28, 0.64, 1);
+  // Symmetric for color/opacity crossfades that should feel calm.
+  static const _calm = Cubic(0.65, 0, 0.35, 1);
 
+  // One-shot on every state change: scale + drop + glow envelope.
   late final AnimationController _settle = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 720),
+    duration: _slow,
   )..value = 1.0;
 
-  // Scale: 0.94 → 1.0 with an elastic-out curve so it overshoots and
-  // visibly oscillates before settling. Plays from 0 → 1 on every state change.
   late final Animation<double> _pulseScale = Tween<double>(
-    begin: 0.94,
+    begin: 0.97,
     end: 1.0,
-  ).animate(CurvedAnimation(parent: _settle, curve: Curves.elasticOut));
+  ).animate(CurvedAnimation(parent: _settle, curve: _arrive));
 
-  // Vertical drop with the same spring so the banner feels like it
-  // physically lands when a new state arrives.
   late final Animation<double> _pulseDrop = Tween<double>(
-    begin: -6,
+    begin: -3,
     end: 0,
-  ).animate(CurvedAnimation(parent: _settle, curve: Curves.easeOutBack));
+  ).animate(CurvedAnimation(parent: _settle, curve: _liquid));
+
+  // Continuous breathing while the user has an action to take.
+  // 1.0 → 1.015 → 1.0 with a slow sine; pairs with a glow that breathes too.
+  late final AnimationController _ambient = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  );
+
+  // Multiplier 0..1: how strongly the ambient effect is applied.
+  // Crossfades smoothly when entering/leaving needs-action states.
+  late final AnimationController _ambientGain = AnimationController(
+    vsync: this,
+    duration: _slow,
+    value: 0,
+  );
+
+  bool _needsAttention(CertifyLogsState s) =>
+      s == CertifyLogsState.uncertified || s == CertifyLogsState.unverifiable;
+
+  // Smooth 0..1..0 sine over the ambient cycle.
+  double _ambientBreath() =>
+      0.5 - 0.5 * math.cos(_ambient.value * 2 * math.pi);
+
+  void _syncAmbient() {
+    final shouldRun = _needsAttention(widget.state) && widget.expanded;
+    if (shouldRun) {
+      _ambientGain.forward();
+      if (!_ambient.isAnimating) _ambient.repeat();
+    } else {
+      _ambientGain.reverse();
+      // Let the ambient controller keep cycling so the gain fades out smoothly,
+      // then stop it once gain reaches 0.
+      _ambientGain.addStatusListener(_maybeStopAmbient);
+    }
+  }
+
+  void _maybeStopAmbient(AnimationStatus s) {
+    if (s == AnimationStatus.dismissed) {
+      _ambient.stop();
+      _ambient.value = 0;
+      _ambientGain.removeStatusListener(_maybeStopAmbient);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAmbient());
+  }
 
   @override
   void didUpdateWidget(covariant CertifyLogsBanner old) {
@@ -77,11 +130,16 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
     if (old.state != widget.state) {
       _settle.forward(from: 0);
     }
+    if (old.state != widget.state || old.expanded != widget.expanded) {
+      _syncAmbient();
+    }
   }
 
   @override
   void dispose() {
     _settle.dispose();
+    _ambient.dispose();
+    _ambientGain.dispose();
     super.dispose();
   }
 
@@ -89,21 +147,29 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = _paletteFor(widget.state, isDark);
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+
+    // Pass durations through; collapse to zero when the OS asks for
+    // reduced motion so we still crossfade colors/opacity but skip
+    // the springy translation/scale.
+    final sizeMotion = reduceMotion ? Duration.zero : _slow;
+    final colorMotion = reduceMotion ? _fast : _medium;
+    final iconMotion = reduceMotion ? _fast : _medium;
 
     return AnimatedBuilder(
-      animation: _settle,
+      animation: Listenable.merge([_settle, _ambient, _ambientGain]),
       builder: (context, child) {
+        if (reduceMotion) return child!;
+        final breath = _ambientBreath() * _ambientGain.value;
+        final scale = _pulseScale.value * (1.0 + 0.015 * breath);
         return Transform.translate(
           offset: Offset(0, _pulseDrop.value),
-          child: Transform.scale(
-            scale: _pulseScale.value,
-            child: child,
-          ),
+          child: Transform.scale(scale: scale, child: child),
         );
       },
       child: AnimatedContainer(
-        duration: _colorMotion,
-        curve: _smooth,
+        duration: colorMotion,
+        curve: _calm,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -115,9 +181,15 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
           ),
           borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
           boxShadow: [
+            // Colored ambient glow — opacity breathes when needs-attention.
             BoxShadow(
-              color: palette.headerBg.withValues(alpha: isDark ? 0.4 : 0.18),
-              blurRadius: 18,
+              color: palette.headerBg.withValues(
+                alpha: (isDark ? 0.40 : 0.18) +
+                    (isDark ? 0.18 : 0.12) *
+                        _ambientBreath() *
+                        _ambientGain.value,
+              ),
+              blurRadius: 18 + 6 * _ambientBreath() * _ambientGain.value,
               offset: const Offset(0, 4),
               spreadRadius: -2,
             ),
@@ -137,26 +209,26 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
               state: widget.state,
               expanded: widget.expanded,
               onTap: widget.onExpandToggle,
-              motion: _iconMotion,
-              colorMotion: _colorMotion,
-              spring: _spring,
-              smooth: _smooth,
+              motion: iconMotion,
+              colorMotion: colorMotion,
+              spring: _liquid,
+              smooth: _calm,
             ),
             AnimatedSize(
-              duration: _sizeMotion,
-              curve: _spring,
+              duration: sizeMotion,
+              curve: _arrive,
               alignment: Alignment.topCenter,
               child: AnimatedSwitcher(
-                duration: _iconMotion,
-                switchInCurve: _spring,
-                switchOutCurve: _smooth,
+                duration: iconMotion,
+                switchInCurve: _liquid,
+                switchOutCurve: _calm,
                 transitionBuilder: (child, anim) {
                   final slide = Tween<Offset>(
                     begin: const Offset(0, -0.04),
                     end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: anim, curve: _spring));
+                  ).animate(CurvedAnimation(parent: anim, curve: _liquid));
                   final scale = Tween<double>(begin: 0.98, end: 1.0)
-                      .animate(CurvedAnimation(parent: anim, curve: _spring));
+                      .animate(CurvedAnimation(parent: anim, curve: _liquid));
                   return FadeTransition(
                     opacity: anim,
                     child: SlideTransition(
