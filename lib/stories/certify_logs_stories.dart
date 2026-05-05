@@ -20,14 +20,12 @@ final certifyLogsStories = <Story>[
           Option(label: 'Certified', value: CertifyLogsState.certified),
         ],
       );
-      final required = context.knobs.boolean(label: 'Required', initial: true);
       final expanded = context.knobs.boolean(label: 'Expanded', initial: true);
       return SizedBox(
         width: 366,
         child: CertifyLogsBanner(
           state: state,
           expanded: expanded,
-          required: required,
           verifiedAt: state == CertifyLogsState.certified
               ? DateTime.now().subtract(const Duration(minutes: 2))
               : null,
@@ -57,7 +55,6 @@ class _InteractiveFlow extends StatefulWidget {
 
 class _InteractiveFlowState extends State<_InteractiveFlow> {
   final _controller = CertifyLogsController();
-  bool _required = true;
   bool _failNext = false;
 
   @override
@@ -89,7 +86,6 @@ class _InteractiveFlowState extends State<_InteractiveFlow> {
             listenable: _controller,
             builder: (context, _) => CertifyLogsBanner.controlled(
               _controller,
-              required: _required,
               onCertifyTap: () => _controller.runGeotabCheck(_fakeGeotabCheck),
               onTryAgainTap: () => _controller.runGeotabCheck(_fakeGeotabCheck),
               onSelfAttestTap: () => _controller.markCertified(attested: true),
@@ -101,11 +97,6 @@ class _InteractiveFlowState extends State<_InteractiveFlow> {
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children: [
-              FilterChip(
-                label: const Text('Required'),
-                selected: _required,
-                onSelected: (v) => setState(() => _required = v),
-              ),
               FilterChip(
                 label: const Text('Fail next call'),
                 selected: _failNext,
@@ -173,7 +164,6 @@ ListenableBuilder(
   listenable: certifyLogs,
   builder: (_, __) => CertifyLogsBanner.controlled(
     certifyLogs,
-    required: workflow.requiresCertification,
     onCertifyTap: () => certifyLogs.runGeotabCheck(geotab.isCertified),
     onTryAgainTap: () => certifyLogs.runGeotabCheck(geotab.isCertified),
     onSelfAttestTap: () => certifyLogs.markCertified(attested: true),
@@ -223,24 +213,7 @@ await certifyLogs.runGeotabCheck(isCertified);''',
 });''',
         ),
         const _Section(
-          title: '5. Required vs Optional',
-          body:
-              'Pass required: false for inline workflow placement where the '
-              'banner is a reminder. Adds a "Skip For Now" tile that calls '
-              'controller.collapse() by default — override onSkipTap to do '
-              'more (dismiss for the session, log "reminder skipped", etc.).',
-          code: '''CertifyLogsBanner.controlled(
-  certifyLogs,
-  required: false,
-  onSkipTap: () {
-    certifyLogs.collapse();
-    analytics.track('hos_reminder_skipped');
-  },
-  // ...
-);''',
-        ),
-        const _Section(
-          title: '6. Theme tokens',
+          title: '5. Theme tokens',
           body:
               'The banner reads Theme.of(context).brightness and pulls hex '
               'pairs from the Figma variables export. It auto-swaps in '
@@ -249,7 +222,7 @@ await certifyLogs.runGeotabCheck(isCertified);''',
           code: null,
         ),
         const _Section(
-          title: '7. Accessibility',
+          title: '6. Accessibility',
           body:
               'Respects MediaQuery.disableAnimations (iOS Reduce Motion / '
               'Android Remove animations). When on, the spring/scale/'
@@ -259,7 +232,7 @@ await certifyLogs.runGeotabCheck(isCertified);''',
           code: null,
         ),
         const _Section(
-          title: '8. Controller API summary',
+          title: '7. Controller API summary',
           body: '',
           code: '''class CertifyLogsController extends ChangeNotifier {
   CertifyLogsState get state;

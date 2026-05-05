@@ -18,11 +18,9 @@ class CertifyLogsBanner extends StatefulWidget {
     super.key,
     required this.state,
     this.expanded = true,
-    this.required = true,
     this.daysCount = 14,
     this.verifiedAt,
     this.onCertifyTap,
-    this.onSkipTap,
     this.onTryAgainTap,
     this.onSelfAttestTap,
     this.onExpandToggle,
@@ -34,10 +32,8 @@ class CertifyLogsBanner extends StatefulWidget {
   factory CertifyLogsBanner.controlled(
     CertifyLogsController controller, {
     Key? key,
-    bool required = true,
     int daysCount = 14,
     VoidCallback? onCertifyTap,
-    VoidCallback? onSkipTap,
     VoidCallback? onTryAgainTap,
     VoidCallback? onSelfAttestTap,
   }) {
@@ -45,12 +41,10 @@ class CertifyLogsBanner extends StatefulWidget {
       key: key,
       state: controller.state,
       expanded: controller.expanded,
-      required: required,
       daysCount: daysCount,
       verifiedAt: controller.verifiedAt,
       onExpandToggle: controller.toggleExpanded,
       onCertifyTap: onCertifyTap,
-      onSkipTap: onSkipTap ?? controller.collapse,
       onTryAgainTap: onTryAgainTap,
       onSelfAttestTap: onSelfAttestTap,
     );
@@ -58,12 +52,10 @@ class CertifyLogsBanner extends StatefulWidget {
 
   final CertifyLogsState state;
   final bool expanded;
-  final bool required;
   final int daysCount;
   final DateTime? verifiedAt;
 
   final VoidCallback? onCertifyTap;
-  final VoidCallback? onSkipTap;
   final VoidCallback? onTryAgainTap;
   final VoidCallback? onSelfAttestTap;
   final VoidCallback? onExpandToggle;
@@ -279,11 +271,9 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
                       key: ValueKey(widget.state),
                       state: widget.state,
                       palette: palette,
-                      required: widget.required,
                       daysCount: widget.daysCount,
                       verifiedAt: widget.verifiedAt,
                       onCertify: widget.onCertifyTap,
-                      onSkip: widget.onSkipTap,
                       onTryAgain: widget.onTryAgainTap,
                       onSelfAttest: widget.onSelfAttestTap,
                     )
@@ -315,7 +305,7 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
           bodyBg: isDark ? const Color(0xFF570C12) : TransfloColors.red50,
           accent: TransfloColors.red500,
           textOn: isDark ? Colors.white : TransfloColors.black900,
-          icon: Icons.warning_amber_rounded,
+          icon: Icons.cancel,
           title: 'CERTIFY  LOGS',
         );
       case CertifyLogsState.certified:
@@ -324,7 +314,7 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
           bodyBg: isDark ? const Color(0xFF004C13) : TransfloColors.green50,
           accent: TransfloColors.green800,
           textOn: isDark ? const Color(0xFF50FF80) : TransfloColors.black900,
-          icon: Icons.verified_user_outlined,
+          icon: Icons.check_circle,
           title: 'LOGS CERTIFIED',
         );
       case CertifyLogsState.loading:
@@ -487,22 +477,18 @@ class _Body extends StatelessWidget {
     super.key,
     required this.state,
     required this.palette,
-    required this.required,
     required this.daysCount,
     required this.verifiedAt,
     this.onCertify,
-    this.onSkip,
     this.onTryAgain,
     this.onSelfAttest,
   });
 
   final CertifyLogsState state;
   final _BannerPalette palette;
-  final bool required;
   final int daysCount;
   final DateTime? verifiedAt;
   final VoidCallback? onCertify;
-  final VoidCallback? onSkip;
   final VoidCallback? onTryAgain;
   final VoidCallback? onSelfAttest;
 
@@ -537,9 +523,7 @@ class _Body extends StatelessWidget {
   String? _message() {
     switch (state) {
       case CertifyLogsState.uncertified:
-        return required
-            ? 'To continue workflow you must certify your HOS logs from the previous $daysCount days'
-            : 'Reminder: certify your HOS logs from the previous $daysCount days';
+        return 'To continue workflow you must certify your HOS logs from the previous $daysCount days';
       case CertifyLogsState.unverifiable:
         return "Can't verify logs, confirm certified before continuing";
       case CertifyLogsState.certified:
@@ -574,14 +558,6 @@ class _Body extends StatelessWidget {
             foreground: Colors.white,
             onTap: onCertify,
           ),
-          if (!required) ...[
-            const SizedBox(height: 8),
-            _SkipTile(
-              background: palette.headerBg,
-              foreground: palette.textOn,
-              onTap: onSkip,
-            ),
-          ],
         ];
       case CertifyLogsState.unverifiable:
         return [
@@ -684,45 +660,3 @@ class _OutlineCta extends StatelessWidget {
   }
 }
 
-class _SkipTile extends StatelessWidget {
-  const _SkipTile({
-    required this.background,
-    required this.foreground,
-    this.onTap,
-  });
-  final Color background;
-  final Color foreground;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: Material(
-        color: background,
-        borderRadius: BorderRadius.circular(4),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(4),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Skip For Now',
-                  style: GoogleFonts.roboto(
-                    color: foreground,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 16, color: foreground),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
