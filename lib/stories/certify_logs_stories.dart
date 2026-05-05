@@ -120,8 +120,6 @@ class _InteractiveFlowState extends State<_InteractiveFlow> {
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          const _ImplementationNotes(),
         ],
       ),
     );
@@ -133,11 +131,13 @@ class _ImplementationGuide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 720,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: const _ImplementationNotes(showHeader: true),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: const _ImplementationNotes(showHeader: true),
+        ),
       ),
     );
   }
