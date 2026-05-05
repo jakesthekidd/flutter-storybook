@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../tokens/colors.dart';
 import '../tokens/semantic_colors.dart';
 
+import 'certify_logs_controller.dart';
+
 enum CertifyLogsState { loading, uncertified, unverifiable, certified }
 
 /// A multi-state status banner that prompts drivers to certify HOS logs.
@@ -25,6 +27,34 @@ class CertifyLogsBanner extends StatefulWidget {
     this.onSelfAttestTap,
     this.onExpandToggle,
   });
+
+  /// Controlled variant — pulls `state`, `expanded`, and `verifiedAt` from a
+  /// [CertifyLogsController] and wires the chevron tap to its toggle.
+  /// Wrap in a [ListenableBuilder] so the banner rebuilds on controller updates.
+  factory CertifyLogsBanner.controlled(
+    CertifyLogsController controller, {
+    Key? key,
+    bool required = true,
+    int daysCount = 14,
+    VoidCallback? onCertifyTap,
+    VoidCallback? onSkipTap,
+    VoidCallback? onTryAgainTap,
+    VoidCallback? onSelfAttestTap,
+  }) {
+    return CertifyLogsBanner(
+      key: key,
+      state: controller.state,
+      expanded: controller.expanded,
+      required: required,
+      daysCount: daysCount,
+      verifiedAt: controller.verifiedAt,
+      onExpandToggle: controller.toggleExpanded,
+      onCertifyTap: onCertifyTap,
+      onSkipTap: onSkipTap ?? controller.collapse,
+      onTryAgainTap: onTryAgainTap,
+      onSelfAttestTap: onSelfAttestTap,
+    );
+  }
 
   final CertifyLogsState state;
   final bool expanded;
