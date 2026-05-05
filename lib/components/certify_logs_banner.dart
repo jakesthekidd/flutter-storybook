@@ -304,7 +304,7 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
           headerBg: isDark ? const Color(0xFF6D1016) : TransfloColors.red100,
           bodyBg: isDark ? const Color(0xFF570C12) : TransfloColors.red50,
           accent: TransfloColors.red500,
-          textOn: isDark ? Colors.white : TransfloColors.black900,
+          textOn: isDark ? Colors.white : TransfloColors.red900,
           icon: Icons.cancel,
           title: 'CERTIFY  LOGS',
         );
@@ -313,7 +313,7 @@ class _CertifyLogsBannerState extends State<CertifyLogsBanner>
           headerBg: isDark ? const Color(0xFF006018) : TransfloColors.green100,
           bodyBg: isDark ? const Color(0xFF004C13) : TransfloColors.green50,
           accent: TransfloColors.green800,
-          textOn: isDark ? const Color(0xFF50FF80) : TransfloColors.black900,
+          textOn: isDark ? const Color(0xFF50FF80) : TransfloColors.green900,
           icon: Icons.check_circle,
           title: 'LOGS CERTIFIED',
         );
@@ -572,7 +572,7 @@ class _Body extends StatelessWidget {
           const SizedBox(height: 8),
           _PrimaryCta(
             label: 'I Have Certified My Logs',
-            icon: Icons.verified_user_outlined,
+            icon: Icons.check_circle,
             color: TransfloColors.green800,
             foreground: Colors.white,
             onTap: onSelfAttest,

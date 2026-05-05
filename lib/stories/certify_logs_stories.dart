@@ -98,6 +98,11 @@ class _InteractiveFlowState extends State<_InteractiveFlow> {
             alignment: WrapAlignment.center,
             children: [
               FilterChip(
+                label: const Text('Required'),
+                selected: _controller.required,
+                onSelected: (v) => setState(() => _controller.required = v),
+              ),
+              FilterChip(
                 label: const Text('Fail next call'),
                 selected: _failNext,
                 onSelected: (v) => setState(() => _failNext = v),
@@ -191,10 +196,19 @@ await certifyLogs.runGeotabCheck(isCertified);''',
         const _Section(
           title: '3. Block workflow progression',
           body:
-              'isBlockingProgress is true while the banner is in any state '
-              'other than certified. Use it to gate the Submit button on '
-              'the Steps screen.',
-          code: '''ElevatedButton(
+              'isBlockingProgress is true while the banner is in a non-certified '
+              'state AND required is true. When required is false the banner is '
+              'informational — it never blocks progression, but the driver can '
+              'still certify through it. Pass required to the controller '
+              'constructor (or update it at any time via the setter).',
+          code: '''// Required (default) — blocks until certified
+final certifyLogs = CertifyLogsController(required: true);
+
+// Optional — banner shows but never blocks
+final certifyLogs = CertifyLogsController(required: false);
+
+// Gate the Submit button either way — isBlockingProgress handles the logic
+ElevatedButton(
   onPressed: certifyLogs.isBlockingProgress ? null : workflow.submit,
   child: const Text('Submit'),
 );''',
@@ -239,6 +253,13 @@ await certifyLogs.runGeotabCheck(isCertified);''',
   bool get expanded;
   DateTime? get verifiedAt;
   bool get attested;
+
+  // true → blocks progression until certified
+  // false → banner is informational only, never blocks
+  bool get required;
+  set required(bool value);
+
+  // false when required is false OR state is certified
   bool get isBlockingProgress;
 
   // Direct transitions

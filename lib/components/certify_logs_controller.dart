@@ -33,13 +33,16 @@ class CertifyLogsController extends ChangeNotifier {
   CertifyLogsController({
     CertifyLogsState initialState = CertifyLogsState.uncertified,
     bool expanded = true,
+    bool required = true,
     DateTime? verifiedAt,
   })  : _state = initialState,
         _expanded = expanded,
+        _required = required,
         _verifiedAt = verifiedAt;
 
   CertifyLogsState _state;
   bool _expanded;
+  bool _required;
   DateTime? _verifiedAt;
   bool _attested = false;
 
@@ -47,15 +50,28 @@ class CertifyLogsController extends ChangeNotifier {
   bool get expanded => _expanded;
   DateTime? get verifiedAt => _verifiedAt;
 
+  /// Whether this banner must be resolved before workflow can proceed.
+  /// When `false`, `isBlockingProgress` always returns `false` — the banner
+  /// is purely informational and the driver can continue without certifying.
+  bool get required => _required;
+  set required(bool value) {
+    if (_required == value) return;
+    _required = value;
+    notifyListeners();
+  }
+
   /// `true` if the certified state was reached via driver self-attestation
   /// rather than a successful Geotab API call. Use to drive event tracking
   /// with different compliance weight.
   bool get attested => _attested;
 
+  /// `true` when the banner is blocking workflow progression.
+  /// Always `false` when `required` is `false`.
   bool get isBlockingProgress =>
-      _state == CertifyLogsState.uncertified ||
-      _state == CertifyLogsState.unverifiable ||
-      _state == CertifyLogsState.loading;
+      _required &&
+      (_state == CertifyLogsState.uncertified ||
+          _state == CertifyLogsState.unverifiable ||
+          _state == CertifyLogsState.loading);
 
   // ---- Direct state transitions -------------------------------------------
 
