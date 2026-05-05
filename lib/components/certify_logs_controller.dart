@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'certify_logs_banner.dart';
+import 'certify_logs_state.dart';
+
+export 'certify_logs_state.dart';
 
 /// A small state machine for the Certify Logs banner.
 ///

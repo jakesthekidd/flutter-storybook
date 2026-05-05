@@ -8,7 +8,7 @@ import '../tokens/semantic_colors.dart';
 
 import 'certify_logs_controller.dart';
 
-enum CertifyLogsState { loading, uncertified, unverifiable, certified }
+export 'certify_logs_state.dart';
 
 /// A multi-state status banner that prompts drivers to certify HOS logs.
 /// Designed to feel reactive — color, size, icon, and content flow between
