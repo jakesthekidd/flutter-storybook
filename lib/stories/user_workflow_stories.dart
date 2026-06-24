@@ -134,37 +134,40 @@ class _DemoTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface0 = isDark ? Colors.black : Colors.white;
-    final surface600 =
-        isDark ? const Color(0xFF535B6D) : const Color(0xFFA9B3C2);
-    final textMain =
-        isDark ? const Color(0xFFE6E8EE) : const Color(0xFF3D3D3D);
+    final surface600 = isDark ? const Color(0xFF535B6D) : const Color(0xFFA9B3C2);
+    final textMain = isDark ? const Color(0xFFE6E8EE) : const Color(0xFF3D3D3D);
+    const blue = Color(0xFF2474BB);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.roboto(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: textMain,
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 4),
+          child: Text(
+            label,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: textMain,
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: surface0,
-            border: Border.all(color: surface600, width: 2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Resting',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              color: surface600,
+        TextField(
+          style: GoogleFonts.roboto(fontSize: 16, color: textMain),
+          decoration: InputDecoration(
+            hintText: label,
+            hintStyle: GoogleFonts.roboto(fontSize: 16, color: surface600),
+            filled: true,
+            fillColor: surface0,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: BorderSide(color: surface600, width: 2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: blue, width: 2),
             ),
           ),
         ),

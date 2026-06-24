@@ -22,6 +22,9 @@ class _P {
   Color get blueText => const Color(0xFFD3E3F1);
 }
 
+const _kDuration = Duration(milliseconds: 260);
+const _kCurve = Curves.easeInOut;
+
 // ── WorkflowSegmentPanel ──────────────────────────────────────────────────────
 
 class WorkflowSegmentPanel extends StatefulWidget {
@@ -53,141 +56,118 @@ class _WorkflowSegmentPanelState extends State<WorkflowSegmentPanel> {
     _expanded = widget.initialExpanded;
   }
 
+  bool get _isLocked => widget.status == StatusIconState.locked;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = _P(isDark);
-    final isLocked = widget.status == StatusIconState.locked;
 
     return SizedBox(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SegmentHeader(
-            title: widget.title,
-            status: widget.status,
-            expanded: _expanded,
-            p: p,
-            onTap: () => setState(() => _expanded = !_expanded),
+          // Header — Material needed for InkWell ripple to render
+          Material(
+            color: p.surface0,
+            child: InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: p.surfaceBorder)),
+                  borderRadius: _expanded
+                      ? const BorderRadius.vertical(bottom: Radius.circular(8))
+                      : null,
+                  boxShadow: _expanded
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF091A28).withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    StatusIcon(state: widget.status, size: 21),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.title.toUpperCase(),
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: p.textDark,
+                        ),
+                      ),
+                    ),
+                    AnimatedContainer(
+                      duration: _kDuration,
+                      curve: _kCurve,
+                      width: 15,
+                      height: 15,
+                      decoration: BoxDecoration(
+                        color: _expanded ? p.cyan100 : p.surface100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: AnimatedRotation(
+                        turns: _expanded ? 0.25 : 0,
+                        duration: _kDuration,
+                        curve: _kCurve,
+                        child: Icon(Icons.chevron_right, size: 12, color: p.textMain),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          if (_expanded) _buildBody(p, isLocked),
+          // Animated body
+          ClipRect(
+            child: AnimatedSize(
+              duration: _kDuration,
+              curve: _kCurve,
+              alignment: Alignment.topCenter,
+              child: _expanded ? _buildBody(p) : const SizedBox(width: double.infinity, height: 0),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(_P p, bool isLocked) {
+  Widget _buildBody(_P p) {
     Widget body = Container(
       color: p.surface200,
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ...widget.children.expand(
-            (child) => [child, const SizedBox(height: 24)],
-          ),
+          ...widget.children.expand((c) => [c, const SizedBox(height: 24)]),
           SizedBox(
             height: 44,
             child: FilledButton(
-              onPressed: isLocked ? null : widget.onNextTap,
+              onPressed: _isLocked ? null : widget.onNextTap,
               style: FilledButton.styleFrom(
                 backgroundColor: p.blue600,
                 foregroundColor: p.blueText,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
-              child: Text(
-                'Next',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text('Next',
+                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w500)),
             ),
           ),
         ],
       ),
     );
 
-    if (isLocked) {
+    if (_isLocked) {
       body = IgnorePointer(child: Opacity(opacity: 0.45, child: body));
     }
     return body;
-  }
-}
-
-class _SegmentHeader extends StatelessWidget {
-  const _SegmentHeader({
-    required this.title,
-    required this.status,
-    required this.expanded,
-    required this.p,
-    required this.onTap,
-  });
-
-  final String title;
-  final StatusIconState status;
-  final bool expanded;
-  final _P p;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final decoration = BoxDecoration(
-      color: p.surface0,
-      border: Border(top: BorderSide(color: p.surfaceBorder)),
-      borderRadius: expanded
-          ? const BorderRadius.vertical(bottom: Radius.circular(8))
-          : null,
-      boxShadow: expanded
-          ? [
-              BoxShadow(
-                color: const Color(0xFF091A28).withValues(alpha: 0.15),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ]
-          : null,
-    );
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: decoration,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            StatusIcon(state: status, size: 21),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                title.toUpperCase(),
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: p.textDark,
-                ),
-              ),
-            ),
-            Container(
-              width: 15,
-              height: 15,
-              decoration: BoxDecoration(
-                color: expanded ? p.cyan100 : p.surface100,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                expanded ? Icons.expand_more : Icons.chevron_right,
-                size: 12,
-                color: p.textMain,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -224,130 +204,131 @@ class _WorkflowStepPanelState extends State<WorkflowStepPanel> {
     _expanded = widget.initialExpanded;
   }
 
+  bool get _isLocked => widget.status == StatusIconState.locked;
+  bool get _isActive => widget.status == StatusIconState.active;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final p = _P(isDark);
-    final isLocked = widget.status == StatusIconState.locked;
-    final isActive = widget.status == StatusIconState.active;
 
-    final border = (_expanded && isActive)
-        ? Border.all(color: p.cyan300)
-        : Border.all(color: p.surface100);
-
-    final boxShadow = (_expanded && isActive)
-        ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 6,
-              offset: const Offset(1, 1),
-            ),
-          ]
-        : null;
-
-    return Container(
+    return AnimatedContainer(
+      duration: _kDuration,
+      curve: _kCurve,
       decoration: BoxDecoration(
         color: p.surface0,
         borderRadius: BorderRadius.circular(7),
-        border: border,
-        boxShadow: boxShadow,
+        border: _isActive
+            ? Border.all(color: p.cyan300, width: 2)
+            : Border.all(color: p.surface100),
+        boxShadow: _isActive
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       clipBehavior: Clip.hardEdge,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(p, isLocked),
-          if (_expanded) _buildBody(p, isLocked),
+          // Header — tinted when active+expanded to reinforce selection
+          Material(
+            color: (_isActive && _expanded)
+                ? p.cyan100.withValues(alpha: isDark ? 0.6 : 0.5)
+                : p.surface0,
+            child: InkWell(
+              onTap: _isLocked ? null : () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    StatusIcon(state: widget.status, size: 21),
+                    const SizedBox(width: 10),
+                    Text(
+                      widget.title.toUpperCase(),
+                      style: GoogleFonts.roboto(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: _isActive ? p.textMain : p.textMid,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (widget.optional) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: p.surface300,
+                          borderRadius: BorderRadius.circular(17),
+                        ),
+                        child: Text(
+                          'OPTIONAL',
+                          style: GoogleFonts.roboto(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: p.surface900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    AnimatedRotation(
+                      turns: _expanded ? 0.25 : 0,
+                      duration: _kDuration,
+                      curve: _kCurve,
+                      child: Icon(Icons.chevron_right, size: 16, color: p.textMid),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Animated body
+          ClipRect(
+            child: AnimatedSize(
+              duration: _kDuration,
+              curve: _kCurve,
+              alignment: Alignment.topCenter,
+              child: _expanded ? _buildBody(p) : const SizedBox(width: double.infinity, height: 0),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(_P p, bool isLocked) {
-    return GestureDetector(
-      onTap: isLocked ? null : () => setState(() => _expanded = !_expanded),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            StatusIcon(state: widget.status, size: 21),
-            const SizedBox(width: 10),
-            Text(
-              widget.title.toUpperCase(),
-              style: GoogleFonts.roboto(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: p.textMid,
-              ),
-            ),
-            const Spacer(),
-            if (widget.optional) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: p.surface300,
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                child: Text(
-                  'OPTIONAL',
-                  style: GoogleFonts.roboto(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: p.surface900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Icon(
-              _expanded ? Icons.expand_more : Icons.chevron_right,
-              size: 16,
-              color: p.textMid,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody(_P p, bool isLocked) {
+  Widget _buildBody(_P p) {
     Widget body = Container(
       color: p.surface100,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ...widget.children.expand(
-            (child) => [child, const SizedBox(height: 16)],
-          ),
+          ...widget.children.expand((c) => [c, const SizedBox(height: 16)]),
           SizedBox(
             height: 44,
             child: OutlinedButton(
-              onPressed: isLocked ? null : widget.onSubmitTap,
+              onPressed: _isLocked ? null : widget.onSubmitTap,
               style: OutlinedButton.styleFrom(
                 backgroundColor: p.cyan100,
                 side: const BorderSide(color: Color(0xFFB8E6F9)),
-                foregroundColor: p.isDark
-                    ? const Color(0xFF94BBDE)
-                    : const Color(0xFF12395C),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                foregroundColor:
+                    p.isDark ? const Color(0xFF94BBDE) : const Color(0xFF12395C),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
-              child: Text(
-                'Submit',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text('Submit',
+                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w500)),
             ),
           ),
         ],
       ),
     );
 
-    if (isLocked) {
+    if (_isLocked) {
       body = IgnorePointer(child: Opacity(opacity: 0.45, child: body));
     }
     return body;
