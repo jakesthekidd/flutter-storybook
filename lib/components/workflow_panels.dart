@@ -70,24 +70,12 @@ class _WorkflowSegmentPanelState extends State<WorkflowSegmentPanel> {
         children: [
           // Header — Material needed for InkWell ripple to render
           Material(
-            color: p.surface0,
+            color: _expanded ? p.surface100 : p.surface0,
             child: InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
               child: Container(
                 decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: p.surfaceBorder)),
-                  borderRadius: _expanded
-                      ? const BorderRadius.vertical(bottom: Radius.circular(8))
-                      : null,
-                  boxShadow: _expanded
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF091A28).withValues(alpha: 0.15),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -218,10 +206,10 @@ class _WorkflowStepPanelState extends State<WorkflowStepPanel> {
       decoration: BoxDecoration(
         color: p.surface0,
         borderRadius: BorderRadius.circular(7),
-        border: _isActive
+        border: (_isActive && _expanded)
             ? Border.all(color: p.cyan300, width: 2)
-            : Border.all(color: p.surface100),
-        boxShadow: _isActive
+            : Border.all(color: p.surfaceBorder, width: 1),
+        boxShadow: (_isActive && _expanded)
             ? [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.10),

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 
+import 'stories/action_stories.dart';
 import 'stories/button_stories.dart';
 import 'stories/card_stories.dart';
 import 'stories/certify_logs_stories.dart';
 import 'stories/color_stories.dart';
+import 'stories/extended_form_stories.dart';
+import 'stories/form_control_stories.dart';
 import 'stories/semantic_color_stories.dart';
 import 'stories/text_field_stories.dart';
 import 'stories/user_workflow_stories.dart';
@@ -73,6 +76,9 @@ class _StorybookAppState extends State<StorybookApp> {
                 ...buttonStories,
                 ...cardStories,
                 ...textFieldStories,
+                ...formControlStories,
+                ...extendedFormStories,
+                ...actionStories,
                 ...userWorkflowStories,
               ],
             ),
