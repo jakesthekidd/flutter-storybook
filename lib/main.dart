@@ -8,6 +8,7 @@ import 'stories/card_stories.dart';
 import 'stories/certify_logs_stories.dart';
 import 'stories/color_stories.dart';
 import 'stories/extended_form_stories.dart';
+import 'stories/scan_field_stories.dart';
 import 'stories/form_control_stories.dart';
 import 'stories/semantic_color_stories.dart';
 import 'stories/text_field_stories.dart';
@@ -80,6 +81,7 @@ class _StorybookAppState extends State<StorybookApp> {
                 ...extendedFormStories,
                 ...actionStories,
                 ...userWorkflowStories,
+                ...scanFieldStories,
               ],
             ),
           ),
