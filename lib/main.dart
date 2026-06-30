@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:storybook_flutter/storybook_flutter.dart';
 
+import 'url_sync.dart';
 import 'stories/action_stories.dart';
 import 'stories/button_stories.dart';
 import 'stories/card_stories.dart';
@@ -61,9 +63,14 @@ class _StorybookAppState extends State<StorybookApp> {
         children: [
           Positioned.fill(
             child: Storybook(
+              initialStory: readStoryFromUrl(),
               wrapperBuilder: (context, child) => Builder(
                 builder: (context) {
                   final sem = Theme.of(context).transflo;
+                  final notifier = context.watch<StoryNotifier>();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    writeStoryToUrl(notifier.currentStoryName);
+                  });
                   return Material(
                     color: sem.backgroundBase,
                     child: Center(child: child),
